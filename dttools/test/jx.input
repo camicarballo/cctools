@@ -9,7 +9,10 @@
 "x": 10,
 "y": 20,
 "list": [100,200,300],
-"object": { "house": "home" }
+"object": { "house": "home" },
+"count": len(["a", "b", "c"]),
+"count2": len([]),
+"count3": len([100, 200, 300, 1, 2, 3])
 }
 
 #comment
@@ -288,5 +291,9 @@ template("{f}", {"f": "ok"});
 template("{f} {q}", {"q": "ok"});
 template("{q}", {"f": "ok"});
 template("bad {object}");
+
+count;
+count2;
+count3;
 
 #end

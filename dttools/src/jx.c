@@ -338,7 +338,21 @@ int jx_array_length( struct jx *array )
 {
 	if(!jx_istype(array, JX_ARRAY)) return -1;
 	int count = 0;
-	for(struct jx_item *i = array->u.items; i; i = i->next) ++count;
+	void *i = NULL;
+    void *j = NULL;
+
+    struct jx* item = jx_iterate_array(array, &i);
+    while(item){
+        struct jx* it = jx_iterate_array(item, &j);
+
+        while(it){
+            count++;
+            it = jx_iterate_array(item, &j);
+        }
+
+        item = jx_iterate_array(array, &i);
+    }
+
 	return count;
 }
 

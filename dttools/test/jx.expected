@@ -711,3 +711,11 @@ value:      error("function template on line 289: undefined symbol in template")
 expression: template("bad {object}")
 value:      error("function template on line 290: cannot format expression in template")
 
+expression: count
+value:      3
+
+expression: count2
+value:      0
+
+expression: count3
+value:      6
