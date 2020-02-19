@@ -30,15 +30,17 @@ def main():
 
     # Generate tasks and submit them
     for i in range(nsplits):
-        infile = "query.fastq.%d" % i
+        infile = "query.fastq.%d.gz" % i
         outfile = "query.fastq.%d.sam" % i
 
-        command = "./bwa mem ref.fastq %s > %s" % (infile, outfile)
+        command = "./bwa mem ref.fastq %s | gzip > %s" % (infile, outfile)
 
         t = Task(command)
 
         t.specify_file("bwa", "bwa", WORK_QUEUE_INPUT, cache=True)
         t.specify_file("ref.fastq", "ref.fastq", WORK_QUEUE_INPUT, cache=True)
+        t.specify_file("/usr/bin/gzip", "gzip", WORK_QUEUE_INPUT, cache=True)
+        t.specify_file("/usr/bin/gunzip", "gunzip", WORK_QUEUE_INPUT, cache=True)
         for post in postfixes:
             t.specify_file("ref.fastq.%s" % post, "ref.fastq.%s" % post, WORK_QUEUE_INPUT, cache=True)
         t.specify_file(infile, infile, WORK_QUEUE_INPUT, cache=False)
@@ -50,13 +52,10 @@ def main():
 
     # Start work_queue_worker on localhost and q.port
 
-    #args = ["work_queue_factory", "127.0.0.1", "%d" % q.port, "-T", "local", "-w", "1", "-W", "%d" % num_workers]
-    #factory = Popen(args)
-
-    #args = ["work_queue_worker", "127.0.0.1", "%d" % q.port, "-d", ""]
-    #worker = []
-    #for i in range(num_workers):
-    #    worker.append(Popen(args))
+    worker = []
+    for i in range(num_workers):
+        args = ["work_queue_worker", "127.0.0.1", "%d" % q.port, "-d", "all", "-o", "worker.out.%d" % i]
+        worker.append(Popen(args))
 
     # Wait for tasks to complete
     print("waiting for tasks to complete...")
@@ -64,13 +63,12 @@ def main():
         t = q.wait(10)
         if t:
             print("task %d complete: %s (return code %d)" % (t.id, t.command, t.return_status))
+            print(t.output)
 
     print("all tasks complete!")
     
-    #Popen.terminate(factory)
-
-    #for i in range(num_workers):
-    #    Popen.terminate(worker[i])
+    for i in range(num_workers):
+        Popen.terminate(worker[i])
 
     end = time()
 

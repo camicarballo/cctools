@@ -12,3 +12,5 @@
 ./bwa index ref.fastq
 
 ./create_splits.py
+
+gzip query.fastq.*
