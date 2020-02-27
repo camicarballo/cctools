@@ -24,9 +24,13 @@ def main():
     nsplits = int(sys.argv[1])
     num_workers = int(sys.argv[2])
 
-    q = WorkQueue(port = 0, debug_log = "wq_bwa.log")
+    q = WorkQueue(port = 0, name = "wq_bwa")
+#    q.enable_monitoring()
 
     print("listening on port %d..." % q.port)
+
+    # Start workers via condor
+    os.system("condor_submit_workers --cores 2 --memory 4000 --disk 10000 -M wq_bwa %d" % num_workers)
 
     # Generate tasks and submit them
     for i in range(nsplits):
@@ -46,16 +50,17 @@ def main():
         t.specify_file(infile, infile, WORK_QUEUE_INPUT, cache=False)
         t.specify_file(outfile, outfile, WORK_QUEUE_OUTPUT, cache=False)
 
+        t.specify_cores(2)
+        t.specify_memory(1000)
+        t.specify_disk(1000)
+
         taskid = q.submit(t)
         print("submitted task (id# %d): %s" % (taskid, t.command))
 
-
-    # Start work_queue_worker on localhost and q.port
-
-    worker = []
-    for i in range(num_workers):
-        args = ["work_queue_worker", "127.0.0.1", "%d" % q.port, "-d", "all", "-o", "worker.out.%d" % i]
-        worker.append(Popen(args))
+    #worker = []
+    #for i in range(num_workers):
+    #    args = ["work_queue_worker", "127.0.0.1", "%d" % q.port, "-d", "all", "-o", "worker.out.%d" % i]
+    #    worker.append(Popen(args))
 
     # Wait for tasks to complete
     print("waiting for tasks to complete...")
@@ -63,16 +68,21 @@ def main():
         t = q.wait(10)
         if t:
             print("task %d complete: %s (return code %d)" % (t.id, t.command, t.return_status))
-            print(t.output)
+#            print(t.output)
+#            if t.resources_measured:
+#                r = t.resources_measured
+#                print("cores: %d | memory: %d | disk: %d" % (r.cores, r.memory, r.disk))
 
     print("all tasks complete!")
     
-    for i in range(num_workers):
-        Popen.terminate(worker[i])
+    #for i in range(num_workers):
+    #    Popen.terminate(worker[i])
 
     end = time()
 
     print("time: %d seconds" % (end-start))
+
+    os.system("condor_rm ccarball")
 
     os.system("rm -f query.fastq.*.sam")
 
