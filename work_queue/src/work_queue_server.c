@@ -18,7 +18,7 @@ See the file COPYING for details.
 #define SERVER_PORT 2345
 #define WQ_PORT 1234
 
-char * workqueue = "{ \"name\" : \"server_wq\" , \"port\" : 1234 }";
+char * workqueue = "{ \"name\" : \"wq_bwa_json\" , \"port\" : 1234 }";
 int timeout = 25;
 
 void reply(struct link *client, char *method, char* message, int id){

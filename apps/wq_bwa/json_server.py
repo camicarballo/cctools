@@ -30,14 +30,7 @@ class WorkQueueServer:
         args = ['./work_queue_server', "%d" % server_port, "%d" % wq_port, '1>', '/dev/null', '2>&1']
         self.server = Popen(args)
 
-        #self.worker = []
-        #args = ["work_queue_worker", "127.0.0.1", "%d" % wq_port]
-
-        #for _ in range(self.num_workers):
-        #    self.worker.append(Popen(args))
-
-        args = ["work_queue_factory", "127.0.0.1", "%d" % wq_port, "-T", "local", "-w", "1", "-W", "%d" % self.num_workers]
-        self.factory = Popen(args)
+        os.system("condor_submit_workers --cores 2 --memory 4000 --disk 10000 -M wq_bwa_json %d" % wq_port)
 
         i = 1
         while True:
@@ -113,10 +106,7 @@ class WorkQueueServer:
         self.socket.close()
         Popen.terminate(self.server)
 
-        #for i in range(self.num_workers):
-        #    Popen.terminate(self.worker[i])
-
-        Popen.terminate(self.factory)
+        os.system("condor_rm ccarball")
 
 
     def get_wq_stats(self):
