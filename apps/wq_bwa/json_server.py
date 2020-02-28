@@ -2,6 +2,7 @@
 #This software is distributed under the GNU General Public License.
 #See the file COPYING for details.
 
+import os
 import socket
 import json
 from time import sleep
@@ -17,7 +18,6 @@ class WorkQueueServer:
 
     def send_recv(self, request):
         request = json.dumps(request)
-        request += "\n"
         self.send(request)
 
         response = self.recv()
@@ -27,10 +27,10 @@ class WorkQueueServer:
         return response
 
     def connect(self, address, server_port, wq_port):
-        args = ['./work_queue_server', "%d" % server_port, "%d" % wq_port, '1>', '/dev/null', '2>&1']
+        args = ['./work_queue_server', "%d" % server_port, "%d" % wq_port]#, '1>', '/dev/null', '2>&1']
         self.server = Popen(args)
 
-        os.system("condor_submit_workers --cores 2 --memory 4000 --disk 10000 -M wq_bwa_json %d" % wq_port)
+        os.system("condor_submit_workers --cores 2 --memory 4000 --disk 10000 -M wq_bwa_json %d" % self.num_workers)
 
         i = 1
         while True:
@@ -47,7 +47,7 @@ class WorkQueueServer:
         total = 0
         sent = 0
 
-        #self.socket.send(length)
+        self.socket.send("%d" % length)
 
         while total < length:
             sent = self.socket.send(msg[sent:])
@@ -65,10 +65,12 @@ class WorkQueueServer:
                 break
 
         response = response[len(length):]
-        length = int(length)
-
-        while len(response) < length:
-            response += self.socket.rec(4096)
+        try:
+            length = int(length)
+            while len(response) < length:
+                response += self.socket.recv(4096)
+        except:
+            pass
         
         return response
 
@@ -108,30 +110,19 @@ class WorkQueueServer:
 
         os.system("condor_rm ccarball")
 
-
-    def get_wq_stats(self):
+    def wq_empty(self):
         request = {
             "jsonrpc" : "2.0",
-            "method" : "stats",
+            "method" : "empty",
             "id" : self.id,
             "params" : ""
         }
 
         response = self.send_recv(request)
         response = json.loads(response)
-        self.wq = json.loads(response["result"]) 
+        empty = response["result"]
 
-    def wq_empty(self):
-        done = self.wq["tasks_done"]
-        failed = self.wq["tasks_failed"]
-        submitted = self.wq["tasks_submitted"]
-        cancelled = self.wq["tasks_cancelled"]
-
-        finished = done + failed + cancelled
-
-        if (submitted - finished) > 0:
+        if empty == "Not Empty":
             return False
         else:
             return True
-        
-

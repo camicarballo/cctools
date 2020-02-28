@@ -18,7 +18,7 @@ def define_tasks(nsplits):
 
     for i in range(nsplits):
         task = {}
-        task["command_line"] = "./bwa mem ref.fastq query.fastq.%d > query.fastq.%d.sam" % (i,i)
+        task["command_line"] = "./bwa mem ref.fastq query.fastq.%d.gz | gzip > query.fastq.%d.sam" % (i,i)
         task["output_files"] = []
         task["input_files"] = []
 
@@ -49,8 +49,8 @@ def define_tasks(nsplits):
             task["input_files"].append(input_file)
 
         q = {}
-        q["local_name"] = "query.fastq.%d" % i
-        q["remote_name"] = "query.fastq.%d" % i
+        q["local_name"] = "query.fastq.%d.gz" % i
+        q["remote_name"] = "query.fastq.%d.gz" % i
 
         flags = {}
         flags["cache"] = False
@@ -58,6 +58,22 @@ def define_tasks(nsplits):
     
         q["flags"] = flags
         task["input_files"].append(q)
+
+        q = {}
+        q["local_name"] = "/usr/bin/gzip"
+        q["remote_name"] = "gzip"
+
+        flags = {}
+        flags["cache"] = True
+        flags["watch"] = False
+    
+        q["flags"] = flags
+        task["input_files"].append(q)
+
+        #specify resources
+        task["cores"] = 2
+        task["memory"] = 1000
+        task["disk"] = 1000
 
         tasks.append(task)
 
@@ -70,7 +86,6 @@ def main():
     start = time()
 
     #generate tasks
-    #nsplits = create_splits("query.fastq")
     define_tasks(int(sys.argv[1]))
 
     q = WorkQueueServer(int(sys.argv[2]))
@@ -85,11 +100,9 @@ def main():
         print(response)
         
     #submit wait requests
-    q.get_wq_stats()
     while not q.wq_empty():
         response = q.wait(10)
         print(response)
-        q.get_wq_stats()
 
     #disconnect
     q.disconnect()
