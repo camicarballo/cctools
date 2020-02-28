@@ -44,7 +44,6 @@ def main():
         t.specify_file("bwa", "bwa", WORK_QUEUE_INPUT, cache=True)
         t.specify_file("ref.fastq", "ref.fastq", WORK_QUEUE_INPUT, cache=True)
         t.specify_file("/usr/bin/gzip", "gzip", WORK_QUEUE_INPUT, cache=True)
-        t.specify_file("/usr/bin/gunzip", "gunzip", WORK_QUEUE_INPUT, cache=True)
         for post in postfixes:
             t.specify_file("ref.fastq.%s" % post, "ref.fastq.%s" % post, WORK_QUEUE_INPUT, cache=True)
         t.specify_file(infile, infile, WORK_QUEUE_INPUT, cache=False)
